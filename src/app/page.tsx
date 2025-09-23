@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/src/app/components/Button'; // Import our new Button
+import { Button } from './components/button'; // Import our new Button
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { createClient } from '@/lib/supabase/server';
 import SiteHeader from './components/SiteHeader'; // Using alias for components
