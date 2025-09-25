@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/src/app/components/button'; // Corrected Path
+import { Button } from '@/src/app/components/button';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 import { sendMessage } from '@/src/app/dashboard/client/actions'; // Import the Server Action
 
@@ -29,8 +29,11 @@ export function ChatBox({ initialMessages, userId }: ChatBoxProps) {
     useEffect(() => {
         const channel = supabase
             .channel('realtime-messages')
+            // This simple filter correctly listens for incoming messages
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
-                (payload) => { setMessages((current) => [...current, payload.new as Message]); }
+                (payload) => {
+                    setMessages((current) => [...current, payload.new as Message]);
+                }
             )
             .subscribe((status) => {
                 setIsConnected(status === 'SUBSCRIBED');
@@ -44,7 +47,7 @@ export function ChatBox({ initialMessages, userId }: ChatBoxProps) {
 
         setIsSending(true);
 
-        // Optimistic UI: Update the UI instantly
+        // Optimistic UI: Add the message to the screen immediately for a fast feel.
         const optimisticMessage: Message = {
             id: crypto.randomUUID(),
             content: newMessage,
@@ -56,7 +59,7 @@ export function ChatBox({ initialMessages, userId }: ChatBoxProps) {
         const messageToSend = newMessage;
         setNewMessage('');
 
-        // Call the secure server action
+        // Call the secure server action to actually send the message
         await sendMessage(messageToSend);
 
         setIsSending(false);
@@ -93,7 +96,7 @@ export function ChatBox({ initialMessages, userId }: ChatBoxProps) {
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
                     disabled={isSending || !isConnected}
-                    className="w-full flex-grow rounded-md border-0 bg-white/5 py-2 px-3 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
+                    className="w-full flex-grow rounded-md border-0 bg-white/5 py-2 px-3 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-amber-500 disabled:opacity-50"
                 />
                 <Button type="submit" size="sm" disabled={isSending || !isConnected || newMessage.trim() === ''}>
                     {isSending ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div> : <PaperAirplaneIcon className="h-5 w-5" />}

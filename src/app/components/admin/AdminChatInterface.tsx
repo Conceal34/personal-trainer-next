@@ -20,30 +20,44 @@ export function AdminChatInterface({ clients, adminId }: AdminChatInterfaceProps
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // State to track notifications for each client
+    const [notifications, setNotifications] = useState<Record<string, number>>({});
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
     useEffect(() => { scrollToBottom(); }, [messages]);
 
-    // Listen for any new message sent to the admin
+    // listener 
     useEffect(() => {
         const channel = supabase
             .channel('admin-chat')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${adminId}` },
                 (payload) => {
-                    // If the new message belongs to the currently selected chat, add it to the view
-                    if (payload.new.sender_id === selectedClientId) {
+                    const senderId = payload.new.sender_id;
+
+                    if (senderId === selectedClientId) {
+                        // If the correct chat is open, add the message to the view
                         setMessages(current => [...current, payload.new as Message]);
+                    } else {
+                        // If a different chat is open, show a notification for the sender
+                        setNotifications(current => ({
+                            ...current,
+                            [senderId]: (current[senderId] || 0) + 1,
+                        }));
                     }
                 }
             ).subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [supabase, adminId, selectedClientId]);
+    }, [supabase, adminId, selectedClientId]); 
 
     const handleClientSelect = async (clientId: string) => {
         setSelectedClientId(clientId);
         setIsLoading(true);
+
+        //  Clear notifications for this client when you open their chat
+        setNotifications(current => ({ ...current, [clientId]: 0 }));
+
         const fetchedMessages = await getMessagesForClient(clientId);
         setMessages(fetchedMessages);
         setIsLoading(false);
@@ -57,8 +71,10 @@ export function AdminChatInterface({ clients, adminId }: AdminChatInterfaceProps
         const optimisticMessage: Message = { id: crypto.randomUUID(), content: newMessage, sender_id: adminId, created_at: new Date().toISOString() };
         setMessages(current => [...current, optimisticMessage]);
 
-        await sendMessageToClient(selectedClientId, newMessage);
+        const messageToSend = newMessage;
         setNewMessage('');
+
+        await sendMessageToClient(selectedClientId, messageToSend);
     };
 
     return (
@@ -73,16 +89,22 @@ export function AdminChatInterface({ clients, adminId }: AdminChatInterfaceProps
                         <li key={client.id}>
                             <button
                                 onClick={() => handleClientSelect(client.id)}
-                                className={`w-full text-left p-4 hover:bg-black/20 ${selectedClientId === client.id ? 'bg-amber-500/10' : ''}`}
+                                className={`w-full text-left p-4 hover:bg-black/20 flex justify-between items-center ${selectedClientId === client.id ? 'bg-amber-500/10' : ''}`}
                             >
-                                {client.full_name || 'Unnamed Client'}
+                                <span>{client.full_name || 'Unnamed Client'}</span>
+                                {/* Notification Dot */}
+                                {notifications[client.id] > 0 && (
+                                    <span className="bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                                        {notifications[client.id]}
+                                    </span>
+                                )}
                             </button>
                         </li>
                     ))}
                 </ul>
             </aside>
 
-            {/* Main Chat Area */}
+            {/* Main Chat Area  */}
             <main className="w-2/3 flex flex-col">
                 {selectedClientId ? (
                     <>
@@ -97,13 +119,7 @@ export function AdminChatInterface({ clients, adminId }: AdminChatInterfaceProps
                             <div ref={messagesEndRef} />
                         </div>
                         <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="Type your message..."
-                                className="w-full flex-grow rounded-md border-0 bg-white/5 py-2 px-3 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-amber-500"
-                            />
+                            <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message..." className="w-full flex-grow rounded-md border-0 bg-white/5 py-2 px-3 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-amber-500" />
                             <Button type="submit" size="sm"><PaperAirplaneIcon className="h-5 w-5" /></Button>
                         </form>
                     </>
@@ -116,3 +132,4 @@ export function AdminChatInterface({ clients, adminId }: AdminChatInterfaceProps
         </div>
     );
 }
+
