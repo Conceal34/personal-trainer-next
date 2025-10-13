@@ -43,10 +43,8 @@ export async function signIn(email: string, password: string) {
   }
   
   // 3. Determine the redirect path based on the role
-  const redirectPath = profile.role === 'ADMIN' 
-    ? '/admin/workouts' 
-    : '/dashboard/client';
-    
+  const redirectPath = profile.role === 'ADMIN' ? '/admin/clients' : '/dashboard/client';
+  
   // 4. Return the success state and the correct path
   return { success: true, redirectPath };
 }

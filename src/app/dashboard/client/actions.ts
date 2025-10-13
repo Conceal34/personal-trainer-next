@@ -103,3 +103,76 @@ export async function sendMessage(content: string) {
   revalidatePath('/dashboard/client');
   return { success: true };
 }
+
+
+type LoggedExercise = {
+  exerciseName: string;
+  reps: string;
+  weight: string;
+  notes?: string;
+};
+
+type LogWorkoutPayload = {
+  workoutPlanId: string;
+  exercises: LoggedExercise[];
+};
+
+export async function logWorkout(formData: LogWorkoutPayload) {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { success: false, message: 'Not authenticated.' };
+
+  // 1. Prepare an array of log entries for a bulk insert
+  const logsToInsert = formData.exercises.map(exercise => ({
+    client_id: session.user.id,
+    workout_plan_id: formData.workoutPlanId,
+    exercise_name: exercise.exerciseName,
+    reps_completed: exercise.reps,
+    weight_used: exercise.weight,
+    notes: exercise.notes,
+    // 2. We can intelligently derive the number of sets completed
+    // by counting the comma-separated entries in the reps string.
+    sets_completed: exercise.reps ? exercise.reps.split(',').length : 0,
+  }));
+
+  // 3. Perform a single, efficient bulk insert of all exercises for that day
+  const { error } = await supabase.from('workout_logs').insert(logsToInsert);
+
+  if (error) {
+    console.error("Supabase error:", error);
+    return { success: false, message: 'Failed to log workout.' };
+  }
+
+  revalidatePath('/dashboard/client');
+  return { success: true, message: 'Workout logged successfully!' };
+}
+
+// Function for a client to submit their weekly check-in
+export async function submitCheckin(formData: {
+  energyLevel: number;
+  motivationLevel: number;
+  biggestChallenge: string;
+  winsForTheWeek: string;
+}) {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { success: false, message: 'Not authenticated.' };
+
+  const { error } = await supabase.from('weekly_checkins').insert({
+    client_id: session.user.id,
+    energy_level: formData.energyLevel,
+    motivation_level: formData.motivationLevel,
+    biggest_challenge: formData.biggestChallenge,
+    wins_for_the_week: formData.winsForTheWeek,
+  });
+
+  if (error) {
+    console.error("Supabase error:", error);
+    return { success: false, message: 'Failed to submit check-in.' };
+  }
+
+  revalidatePath('/dashboard/client');
+  revalidatePath(`/admin/clients/${session.user.id}`); // Also refresh the admin view
+  return { success: true, message: 'Check-in submitted successfully!' };
+}
+

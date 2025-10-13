@@ -9,8 +9,8 @@ interface MeetingControlsProps {
 }
 
 export function MeetingControls({ meetingId, status }: MeetingControlsProps) {
-    // Only show controls for pending meetings
-    if (status !== 'PENDING') {
+    // This component now ONLY handles pending meetings
+    if (status.toLowerCase() !== 'pending') {
         return null;
     }
 

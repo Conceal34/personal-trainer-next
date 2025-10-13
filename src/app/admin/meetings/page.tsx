@@ -1,16 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { MeetingControls } from '@/src/app/components/admin/MeetingControls';
+import { Button } from '@/src/app/components/button';
 
 export default async function AdminMeetingsPage() {
     const supabase = await createClient();
 
-    // Fetch all meetings and join with the profiles table to get the client's name
+    // Fetch all meetings, including the meeting_link and the client's full_name
     const { data: meetings, error } = await supabase
         .from('meetings')
         .select(`
             id,
             requested_time,
             status,
+            meeting_link,
             profiles ( full_name )
         `)
         .order('status', { ascending: true })
@@ -20,11 +22,12 @@ export default async function AdminMeetingsPage() {
         console.error("Error fetching meetings:", error);
     }
 
+    // Helper function to style the status text
     const getStatusChipClass = (status: string) => {
-        switch (status) {
-            case 'confirmed': return 'bg-green-500/20 text-green-400';
-            case 'pending': return 'bg-yellow-500/20 text-yellow-400';
-            case 'cancelled': return 'bg-red-500/20 text-red-400';
+        switch (status.toUpperCase()) {
+            case 'CONFIRMED': return 'bg-green-500/20 text-green-400';
+            case 'PENDING': return 'bg-yellow-500/20 text-yellow-400';
+            case 'CANCELLED': return 'bg-red-500/20 text-red-400';
             default: return 'bg-gray-500/20 text-gray-400';
         }
     };
@@ -51,10 +54,28 @@ export default async function AdminMeetingsPage() {
                                 </p>
                             </div>
                             <div className="flex items-center gap-4">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusChipClass(meeting.status)}`}>
-                                    {meeting.status}
-                                </span>
-                                <MeetingControls meetingId={meeting.id} status={meeting.status} />
+
+                                <MeetingControls
+                                    meetingId={meeting.id}
+                                    status={meeting.status}
+                                />
+
+                                {/* If the meeting is confirmed AND has a link, show a button to join.*/}
+                                {meeting.status === 'CONFIRMED' && meeting.meeting_link && (
+                                    <Button href={meeting.meeting_link} target="_blank" size="sm">
+                                        Join Meeting
+                                    </Button>
+                                )}
+
+                                {/* For any other status that is not pending (e.g., CANCELLED, COMPLETED,
+                                or a CONFIRMED meeting that is still processing its link), 
+                                just show the status text.
+                                */}
+                                {meeting.status !== 'PENDING' && !(meeting.status === 'CONFIRMED' && meeting.meeting_link) && (
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusChipClass(meeting.status)}`}>
+                                        {meeting.status}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     )) : (
