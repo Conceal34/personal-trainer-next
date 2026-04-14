@@ -1,50 +1,57 @@
-'use server';
+"use server";
 
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect('/');
+  redirect("/");
 }
 
 export async function signIn(email: string, password: string) {
   const supabase = await createClient();
 
   // 1. Sign in the user
-  const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+  const {
+    data: { user },
+    error: signInError,
+  } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (signInError || !user) {
-    // Check for the specific "Invalid login credentials" error
-    if (signInError?.message.includes('Invalid login credentials')) {
-      return { 
-        success: false, 
-        message: 'Invalid email or password. Don\'t have an account?', 
-        isUserNotFound: true // Send a new flag to the client
+    if (signInError?.message.includes("Invalid login credentials")) {
+      return {
+        success: false,
+        message: "Invalid email or password. Don't have an account?",
+        isUserNotFound: true,
       };
     }
-    return { success: false, message: signInError?.message || 'Invalid login credentials.' };
+    return {
+      success: false,
+      message: signInError?.message || "Invalid login credentials.",
+    };
   }
 
-  // 2. Fetch the user's profile to check their role
+  // --- DEBUGGING STEP FOR MCA ---
+  // If this still fails, it means the RLS policy is blocking the read.
+  // We fetch the profile specifically for the user ID we just got back.
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
     .single();
-  
+
+  // If profile is missing here, it's 100% an RLS issue.
   if (profileError || !profile) {
-    // This case is unlikely but good to handle
-    return { success: false, message: 'Could not find user profile.' };
+    console.error("Profile check failed:", profileError); // Check your server terminal
+    return { success: false, message: "Could not find user profile." };
   }
-  
-  // 3. Determine the redirect path based on the role
-  const redirectPath = profile.role === 'ADMIN' ? '/admin/clients' : '/dashboard/client';
-  
-  // 4. Return the success state and the correct path
+
+  const redirectPath =
+    profile.role === "ADMIN" ? "/admin/clients" : "/dashboard/client";
+
   return { success: true, redirectPath };
 }
