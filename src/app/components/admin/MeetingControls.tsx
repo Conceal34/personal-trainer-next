@@ -1,27 +1,31 @@
-'use client';
+"use client";
 
-import { approveMeeting, denyMeeting } from '@/src/app/admin/actions';
-import { Button } from '@/src/app/components/button';
+import { approveMeeting, denyMeeting } from "@/app/admin/actions";
+import { Button } from "@/app/components/button";
 
 interface MeetingControlsProps {
-    meetingId: string;
-    status: string;
+  meetingId: string;
+  status: string;
 }
 
 export function MeetingControls({ meetingId, status }: MeetingControlsProps) {
-    // This component now ONLY handles pending meetings
-    if (status.toLowerCase() !== 'pending') {
-        return null;
-    }
+  // This component now ONLY handles pending meetings
+  if (status.toLowerCase() !== "pending") {
+    return null;
+  }
 
-    return (
-        <div className="flex items-center gap-2">
-            <form action={() => approveMeeting(meetingId)}>
-                <Button type="submit" size="sm">Approve</Button>
-            </form>
-            <form action={() => denyMeeting(meetingId)}>
-                <Button type="submit" variant="outline" size="sm">Deny</Button>
-            </form>
-        </div>
-    );
+  return (
+    <div className="flex items-center gap-2">
+      <form action={() => approveMeeting(meetingId)}>
+        <Button type="submit" size="sm">
+          Approve
+        </Button>
+      </form>
+      <form action={() => denyMeeting(meetingId)}>
+        <Button type="submit" variant="outline" size="sm">
+          Deny
+        </Button>
+      </form>
+    </div>
+  );
 }

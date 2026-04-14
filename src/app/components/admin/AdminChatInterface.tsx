@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/src/app/components/button';
-import { getMessagesForClient, sendMessageToClient } from '@/src/app/admin/actions';
+import { Button } from '@/app/components/button';
+import { getMessagesForClient, sendMessageToClient } from '@/app/admin/actions';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 
 type Client = { id: string; full_name: string | null; };

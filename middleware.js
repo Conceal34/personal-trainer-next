@@ -35,40 +35,38 @@ export async function middleware(request) {
   );
 
   // 1. Get the Auth User
+  // This refreshes the session but doesn't hit your 'profiles' table
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   // 2. Define protected paths
-  const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
-  const isClientPage = request.nextUrl.pathname.startsWith("/dashboard");
-  const isLoginPage = request.nextUrl.pathname === "/login";
+  const pathname = request.nextUrl.pathname;
+  const isAdminPage = pathname.startsWith("/admin");
+  const isClientPage = pathname.startsWith("/dashboard");
+  const isLoginPage = pathname === "/login";
 
   // 3. Logic: Not logged in? Go to login.
   if (!user && (isAdminPage || isClientPage)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 4. Logic: Logged in? Check role for redirection
+  // 4. Logic: Logged in? Check role using user_metadata (ZERO DB QUERIES)
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    const role = user.user_metadata?.role;
 
     // Redirect if trying to access the wrong area
-    if (isAdminPage && profile?.role !== "ADMIN") {
+    if (isAdminPage && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    if (isClientPage && profile?.role === "ADMIN") {
+    if (isClientPage && role === "ADMIN") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
 
     // If logged in and trying to go to login page, send to their respective dashboard
     if (isLoginPage) {
-      const redirectPath = profile?.role === "ADMIN" ? "/admin" : "/dashboard";
+      const redirectPath = role === "ADMIN" ? "/admin" : "/dashboard";
       return NextResponse.redirect(new URL(redirectPath, request.url));
     }
   }
