@@ -75,6 +75,7 @@ export default function ClientDetailPage({
   const [client, setClient] = useState<ClientWithDetails | null>(null);
   const [dayFilter, setDayFilter] = useState("all");
   const [exerciseFilter, setExerciseFilter] = useState("all");
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
   const fetchClientData = useCallback(async () => {
     const { clientId } = await params;
