@@ -266,11 +266,12 @@ export async function getMessagesForClient(clientId: string) {
 
   return data;
 }
+
 export async function getGoogleAuthUrl() {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/google/callback`,
+    process.env.GOOGLE_REDIRECT_URI,
   );
 
   const scopes = ["https://www.googleapis.com/auth/calendar.events"];
@@ -278,6 +279,7 @@ export async function getGoogleAuthUrl() {
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
+    prompt: "consent",
   });
 
   redirect(url);
@@ -367,6 +369,7 @@ export async function uploadMealPlan(formData: FormData) {
     .from("meal-plans")
     .upload(filePath, file, {
       upsert: true, // 'upsert: true' means it will overwrite any existing file with the same name for this client.
+      cacheControl: "3600",
     });
 
   if (uploadError) {
