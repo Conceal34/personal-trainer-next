@@ -254,10 +254,9 @@ export async function getMessagesForClient(clientId: string) {
     .from("messages")
     .select("*")
     .or(
-      `and(sender_id.eq.${adminId},receiver_id.eq.${clientId})`,
-      `and(sender_id.eq.${clientId},receiver_id.eq.${adminId})`,
+      `and(sender_id.eq.${adminId},receiver_id.eq.${clientId}),and(sender_id.eq.${clientId},receiver_id.eq.${adminId})`,
     )
-    .order("created_at");
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error fetching messages:", error);

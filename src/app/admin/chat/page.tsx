@@ -2,11 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminChatInterface } from "@/app/components/admin/AdminChatInterface";
 import { Database } from "@/types/database";
 
-// Define a type for the RPC return based on your SQL function
-interface ChattedUser {
-  user_id: string;
-}
-
 // Extract the Profile type from your Database schema
 type ClientProfile = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
@@ -36,7 +31,6 @@ export default async function AdminChatPage() {
       <p className="text-amber-400 text-sm uppercase font-semibold mb-8">
         RESPOND TO CLIENT MESSAGES
       </p>
-      {/* If clients list is empty, this will now show why (no clients in DB) */}
       <AdminChatInterface clients={clients} adminId={adminId} />
     </div>
   );
