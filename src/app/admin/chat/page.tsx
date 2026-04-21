@@ -8,7 +8,10 @@ interface ChattedUser {
 }
 
 // Extract the Profile type from your Database schema
-type ClientProfile = Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'full_name'>;
+type ClientProfile = Pick<
+  Database["public"]["Tables"]["profiles"]["Row"],
+  "id" | "full_name"
+>;
 
 export default async function AdminChatPage() {
   const supabase = await createClient();
@@ -16,27 +19,14 @@ export default async function AdminChatPage() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  
+
   const adminId = session?.user.id || "";
 
-  const { data: messageUsers } = await supabase.rpc(
-    "get_chatted_user_ids"
-  ) as { data: ChattedUser[] | null };
-
-  let clients: ClientProfile[] = [];
-
-  if (messageUsers && messageUsers.length > 0) {
-    const clientIds = messageUsers.map((u) => u.user_id);
-    
-    const { data: clientProfiles } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", clientIds);
-      
-    if (clientProfiles) {
-      clients = clientProfiles;
-    }
-  }
+  const { data: clientProfiles, error } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("role", "CLIENT");
+  const clients: ClientProfile[] = clientProfiles || [];
 
   return (
     <div>
@@ -46,6 +36,7 @@ export default async function AdminChatPage() {
       <p className="text-amber-400 text-sm uppercase font-semibold mb-8">
         RESPOND TO CLIENT MESSAGES
       </p>
+      {/* If clients list is empty, this will now show why (no clients in DB) */}
       <AdminChatInterface clients={clients} adminId={adminId} />
     </div>
   );

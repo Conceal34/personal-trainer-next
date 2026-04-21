@@ -83,6 +83,12 @@ export default async function ClientDashboard() {
     }
   }
 
+  if (adminRes.error) {
+    console.log("DEBUG: Admin fetch failed with:", adminRes.error.message);
+  } else {
+    console.log("DEBUG: Admin ID found:", adminRes.data?.id);
+  }
+
   return (
     <div className="bg-black text-white min-h-screen">
       {/* Dashboard Header */}
