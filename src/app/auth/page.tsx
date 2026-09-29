@@ -310,7 +310,7 @@ export default function AuthPage() {
             </div>
           )}
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             <Button
               onClick={handleAuthAction}
               disabled={isSubmitting}
@@ -322,6 +322,16 @@ export default function AuthPage() {
                   ? "Create Account"
                   : "Sign In"}
             </Button>
+            
+            {!isSignUp && (
+              <div className="mt-4 pt-4 border-t border-gray-700 text-center text-sm text-gray-400">
+                <p className="font-semibold text-amber-400 mb-2">Portfolio Demo Accounts:</p>
+                <div className="flex flex-col space-y-1">
+                  <p><span className="text-white">Admin:</span> admin@demo.com / demo123</p>
+                  <p><span className="text-white">Client:</span> client@demo.com / demo123</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <p className="text-center text-sm text-gray-400">
