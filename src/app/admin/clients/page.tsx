@@ -41,9 +41,12 @@ export default function AdminClientsPage() {
   const [sortBy, setSortBy] = useState<SortKey>("full_name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchClients = async () => {
       setIsLoading(true);
+      setErrorMsg(null);
       const supabase = createClient();
       const { data, error } = await supabase
         .from("profiles")
@@ -54,6 +57,7 @@ export default function AdminClientsPage() {
 
       if (error) {
         console.error("Error fetching clients:", error);
+        setErrorMsg(error.message || JSON.stringify(error));
       } else {
         setClients(data as Client[]);
       }
@@ -83,14 +87,14 @@ export default function AdminClientsPage() {
             ) * dir
           );
         case "workout_assigned":
-          return (a.workout_plans.length - b.workout_plans.length) * dir;
+          return ((a.workout_plans?.length || 0) - (b.workout_plans?.length || 0)) * dir;
         case "next_meeting":
-          const meetingA = a.meetings.find(
+          const meetingA = a.meetings?.find(
             (m) =>
               m.status === "CONFIRMED" &&
               new Date(m.requested_time) > new Date(),
           );
-          const meetingB = b.meetings.find(
+          const meetingB = b.meetings?.find(
             (m) =>
               m.status === "CONFIRMED" &&
               new Date(m.requested_time) > new Date(),
@@ -141,6 +145,7 @@ export default function AdminClientsPage() {
       <div className="bg-gray-900/50 rounded-2xl border border-gray-700">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left">
+            {/* ...thead is unaffected... */}
             <thead className="border-b border-gray-700 text-gray-400 uppercase tracking-wider">
               <tr>
                 <th className="p-4">
@@ -211,15 +216,21 @@ export default function AdminClientsPage() {
                     Loading clients...
                   </td>
                 </tr>
+              ) : errorMsg ? (
+                <tr>
+                  <td colSpan={7} className="text-center p-10 text-red-400">
+                    Database Error: {errorMsg}
+                  </td>
+                </tr>
               ) : (
                 sortedClients.map((client) => {
                   const subscriptionStatus =
-                    client.subscriptions[0]?.status?.toUpperCase() ||
+                    client.subscriptions?.[0]?.status?.toUpperCase() ||
                     "INACTIVE";
                   const subscriptionPlan =
-                    client.subscriptions[0]?.plans?.name || "No Plan";
-                  const hasWorkout = client.workout_plans.length > 0;
-                  const nextMeeting = client.meetings.find(
+                    client.subscriptions?.[0]?.plans?.name || "No Plan";
+                  const hasWorkout = client.workout_plans?.length > 0;
+                  const nextMeeting = client.meetings?.find(
                     (m) =>
                       m.status === "CONFIRMED" &&
                       new Date(m.requested_time) > new Date(),
