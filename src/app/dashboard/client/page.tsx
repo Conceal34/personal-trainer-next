@@ -119,6 +119,11 @@ export default async function ClientDashboard() {
 
           <WeeklyCheckin isCheckinDue={isCheckinDue} />
 
+          {/* Performance Metrics Section */}
+          <div className="pt-2">
+            <ClientMetrics clientId={userId} />
+          </div>
+
           {/* Workout Plan Section */}
           {workoutPlan ? (
             <WorkoutPlanDisplay plan={workoutPlan} />
@@ -145,11 +150,6 @@ export default async function ClientDashboard() {
               </Button>
             </div>
           )}
-
-          {/* Performance Metrics Section */}
-          <div className="pt-4">
-            <ClientMetrics clientId={userId} />
-          </div>
         </div>
 
         {/* Right Column */}
