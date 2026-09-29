@@ -53,7 +53,7 @@ export function ProgressChart({
   clientId,
   selectedExercise,
 }: ProgressChartProps) {
-  const [selectedMetric, setSelectedMetric] = useState<Metric>("totalVolume");
+  const [selectedMetric, setSelectedMetric] = useState<Metric>("e1rm");
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

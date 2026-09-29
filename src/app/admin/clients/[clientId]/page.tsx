@@ -162,6 +162,16 @@ export default function ClientDetailPage({
       {} as Record<string, WorkoutLog[]>,
     );
   }, [client?.workout_logs, dayFilter, exerciseFilter, client?.workout_plans]);
+
+  const defaultChartExercise = useMemo(() => {
+    if (!client?.workout_logs || client.workout_logs.length === 0) return null;
+    // Find the most recently logged exercise to show by default
+    const sorted = [...client.workout_logs].sort(
+      (a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
+    );
+    return sorted[0].exercise_name;
+  }, [client?.workout_logs]);
+
   const toggleDate = (date: string) => {
     setExpandedDate(expandedDate === date ? null : date);
   };
@@ -353,7 +363,7 @@ export default function ClientDetailPage({
         <div>
           <ProgressChart
             clientId={client.id}
-            selectedExercise={exerciseFilter === "all" ? null : exerciseFilter}
+            selectedExercise={exerciseFilter === "all" ? defaultChartExercise : exerciseFilter}
           />
         </div>
       </div>
