@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Button } from '@/src/app/components/button';
-import { uploadMealPlan } from '@/src/app/admin/actions';
+import { Button } from '@/app/components/button';
+import { uploadMealPlan } from '@/app/admin/actions';
 import { UploadCloudIcon, FileTextIcon } from 'lucide-react';
 
 interface MealPlanUploaderProps {

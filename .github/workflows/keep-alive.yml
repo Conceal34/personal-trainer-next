@@ -1,0 +1,40 @@
+name: Keep Supabase Alive (Randomized)
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Randomly Decide Whether to Ping
+        id: random
+        run: |
+          # 1 in 14 chance (approx every 3.5 days if run 4 times a day)
+          CHANCE=$((1 + RANDOM % 14))
+          if [ "$CHANCE" -eq 1 ]; then
+            echo "should_ping=true" >> $GITHUB_OUTPUT
+            echo "Rolling the dice... Hit! We will ping the database this time."
+          else
+            echo "should_ping=false" >> $GITHUB_OUTPUT
+            echo "Rolling the dice... Miss ($CHANCE). Skipping this time to keep it random."
+          fi
+
+      - name: Ping Keep-Alive Endpoint
+        if: steps.random.outputs.should_ping == 'true'
+        run: |
+          # The URL is stored in GitHub Secrets
+          URL="${{ secrets.SITE_URL }}/api/keep-alive"
+          if [ "$URL" == "/api/keep-alive" ]; then
+            echo "Error: SITE_URL secret is not set. Please add it to your GitHub Repository Secrets."
+            exit 1
+          fi
+          echo "Pinging $URL..."
+          if [ -n "${{ secrets.CRON_SECRET }}" ]; then
+            curl -f -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "$URL"
+          else
+            curl -f "$URL"
+          fi
