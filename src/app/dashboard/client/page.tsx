@@ -6,6 +6,7 @@ import { MeetingScheduler } from "@/app/components/client/MeetingScheduler";
 import { ChatBox } from "@/app/components/client/ChatBox";
 import { WorkoutPlanDisplay } from "@/app/components/client/WorkoutPlanDisplay";
 import { WeeklyCheckin } from "@/app/components/client/WeeklyCheckin";
+import { ClientMetrics } from "@/app/components/client/ClientMetrics";
 
 export default async function ClientDashboard() {
   const supabase = await createClient();
@@ -144,6 +145,11 @@ export default async function ClientDashboard() {
               </Button>
             </div>
           )}
+
+          {/* Performance Metrics Section */}
+          <div className="pt-4">
+            <ClientMetrics clientId={userId} />
+          </div>
         </div>
 
         {/* Right Column */}
