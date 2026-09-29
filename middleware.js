@@ -44,29 +44,35 @@ export async function middleware(request) {
   const pathname = request.nextUrl.pathname;
   const isAdminPage = pathname.startsWith("/admin");
   const isClientPage = pathname.startsWith("/dashboard");
-  const isLoginPage = pathname === "/login";
+  const isLoginPage = pathname === "/auth" || pathname === "/login";
 
   // 3. Logic: Not logged in? Go to login.
   if (!user && (isAdminPage || isClientPage)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/auth", request.url));
   }
 
-  // 4. Logic: Logged in? Check role using user_metadata (ZERO DB QUERIES)
+  // 4. Logic: Logged in? Check role.
   if (user) {
-    const role = user.user_metadata?.role;
+    let role = user.user_metadata?.role;
+    
+    // If role is missing from user_metadata (e.g. manually created users), fetch from DB
+    if (!role) {
+      const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      role = data?.role;
+    }
 
     // Redirect if trying to access the wrong area
     if (isAdminPage && role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/dashboard/client", request.url));
     }
 
     if (isClientPage && role === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      return NextResponse.redirect(new URL("/admin/clients", request.url));
     }
 
     // If logged in and trying to go to login page, send to their respective dashboard
     if (isLoginPage) {
-      const redirectPath = role === "ADMIN" ? "/admin" : "/dashboard";
+      const redirectPath = role === "ADMIN" ? "/admin/clients" : "/dashboard/client";
       return NextResponse.redirect(new URL(redirectPath, request.url));
     }
   }
